@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joe-Al | Cinematographer & Director</title>
+    <style>
+        /* New Color Palette and Styles */
+        :root {
+            --neon-green: #6EFF6E;
+            --bright-pink: #FF5EC8;
+            --aqua-blue: #4BDFFF;
+            --pastel-purple: #C28DFF;
+            --charcoal-black: #1A1A1A;
+            --soft-white: #FDFDFD;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--soft-white); /* This will be largely covered by the video, but good fallback */
+            color: var(--charcoal-black);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        /* --- Video Centerpiece & Header --- */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-background::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(26, 26, 26, 0.7); /* Charcoal Black overlay to ensure text readability */
+        }
+
+        header {
+            text-align: center;
+            padding: 2em 1em;
+            position: relative;
+            z-index: 2;
+            color: var(--neon-green);
+        }
+
+        h1 {
+            font-size: 3.5em;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--neon-green); /* Neon glow effect */
+        }
+        
+        .header-tagline {
+            font-size: 1.2em;
+            color: var(--pastel-purple);
+        }
+
+        /* --- Main Content Container --- */
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 20vh 1em 2em;
+            max-width: 900px;
+            margin: auto;
+            /* Making the background transparent / semi-transparent */
+            background: rgba(194, 141, 255, 0.2); /* Pastel Purple with 20% opacity */
+            backdrop-filter: blur(5px); /* Adds a subtle blur to the video behind it */
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            color: var(--charcoal-black);
+            border-radius: 10px; /* Optional: adds rounded corners to the content box */
+        }
+
+        h2, h3 {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--charcoal-black);
+        }
+
+        h2 {
+            font-size: 2em;
+            border-bottom: 2px solid var(--bright-pink);
+            padding-bottom: 0.5em;
+            margin-bottom: 1em;
+        }
+
+        section {
+            padding: 2em 1em;
+            margin-bottom: 2em;
+        }
+
+        /* --- Links and Separators --- */
+        a {
+            color: var(--aqua-blue);
+            text-decoration: none;
+            text-shadow: 0 0 5px rgba(75, 223, 255, 0.5); /* Subtle glow */
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--bright-pink);
+            text-shadow: 0 0 8px rgba(255, 94, 200, 0.7);
+        }
+
+        .rainbow-divider {
+            border: none;
+            height: 5px;
+            background: linear-gradient(90deg, #FF5EC8, #C28DFF, #4BDFFF, #6EFF6E); /* Rainbow motif */
+            margin: 2em 0;
+            border-radius: 5px;
+        }
+
+        /* --- Buttons --- */
+        button {
+            padding: 0.8em 1.5em;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 25px; /* Rounded buttons */
+            transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .green-btn {
+            background-color: var(--neon-green);
+            color: var(--charcoal-black);
+        }
+
+        .green-btn:hover {
+            background-color: var(--charcoal-black);
+            color: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .pink-btn {
+            background-color: var(--bright-pink);
+            color: var(--soft-white);
+        }
+
+        .pink-btn:hover {
+            background-color: var(--soft-white);
+            color: var(--bright-pink);
+            box-shadow: 0 0 10px var(--bright-pink);
+        }
+        
+        /* --- General Styling --- */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .project-card {
+            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white for cards */
+            backdrop-filter: blur(5px);
+            padding: 1.5em;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .about-section img {
+            max-width: 150px;
+            border: 3px solid var(--neon-green);
+            border-radius: 50%;
+            display: block;
+            margin: 0 auto 1em;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+        
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+
+        input, textarea {
+            padding: 0.8em;
+            border: 1px solid var(--aqua-blue);
+            background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent input fields */
+            color: var(--charcoal-black);
+            border-radius: 5px;
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: rgba(26, 26, 26, 0.7);
+        }
+
+        footer {
+            background-color: var(--charcoal-black);
+            color: var(--soft-white);
+            text-align: center;
+            padding: 2em 1em;
+            position: relative; /* Ensure footer is above the video */
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="video-background">
+        <video autoplay loop muted playsinline>
+            <source src="joellus.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div class="content">
+        <header>
+            <h1>Joe-Al</h1>
+            <p class="header-tagline"><strong>Cinematographer & Director</strong> specializing in narrative, commercial, and documentary films.</p>
+        </header>
+
+        <hr class="rainbow-divider">
+
+        <section id="portfolio">
+            <h2>Portfolio</h2>
+            <p>A selection of my recent work across various genres. My focus is on creating dynamic, story-driven visuals that capture the essence of each project.</p>
+            
+            <h3>Narrative</h3>
+            <div class="portfolio-grid">
+                <div class="project-card">
+                    <h3>Echoes of the Void</h3>
+                    <p><strong>My Role:</strong> Director of Photography</p>
+                    <p><strong>Client:</strong> Independent Film</p>
+                    <p><strong>Summary:</strong> A sci-fi short film exploring loneliness in a futuristic world.</p>
+                </div>
+                <div class="project-card">
+                    <h3>The Last Light</h3>
+                    <p><strong>My Role:</strong> Director</p>
+                    <p><strong>Client:</strong> Moonstone Productions</p>
+                    <p><strong>Summary:</strong> A dramatic piece about a lighthouse keeper's final night on the job.</p>
+                </div>
+            </div>
+
+            <hr class="rainbow-divider">
+
+            <h3>Commercials</h3>
+            <div class="portfolio-grid">
+                <div class="project-card">
+                    <h3>Urban Flow</h3>
+                    <p><strong>My Role:</strong> Director of Photography</p>
+                    <p><strong>Client:</strong> Nexus Wear</p>
+                    <p><strong>Summary:</strong> A high-energy commercial showcasing a new line of athletic apparel.</p>
+                </div>
+            </div>
+            
+            <hr class="rainbow-divider">
+
+            <h3>Music Videos</h3>
+            <div class="portfolio-grid">
+                <div class="project-card">
+                    <h3>"Starlight" - The Solars</h3>
+                    <p><strong>My Role:</strong> Director & Cinematographer</p>
+                    <p><strong>Client:</strong> Indie Records</p>
+                    <p><strong>Summary:</strong> A dream-like visual for a psychedelic rock band's single.</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="rainbow-divider">
+
+        <section id="about" class="about-section">
+            <h2>About Me</h2>
+            <img src="joelface.jpg" alt="Joe-Al Headshot">
+            <p>I'm Joe-Al, a passionate filmmaker with over 10 years of experience behind the camera and in the director's chair. My journey began in documentary filmmaking, which instilled in me a deep appreciation for authentic storytelling and capturing genuine human emotion. I believe that a great image is not just a pretty picture, but a powerful tool that serves the narrative. I'm proficient with a wide range of cameras and lighting equipment, and I'm always looking for new challenges to push my creative boundaries.</p>
+            <p><strong>Resume/CV:</strong> <a href="#" class="green-btn">Download PDF</a></p>
+        </section>
+
+        <hr class="rainbow-divider">
+
+        <section id="services">
+            <h2>Services</h2>
+            <ul>
+                <li>
+                    <h3>Cinematography</h3>
+                    <p>Collaborating with directors to design and execute the visual style of a project, including lighting, camera movement, and shot composition.</p>
+                </li>
+                <li>
+                    <h3>Directing</h3>
+                    <p>Leading the creative vision, from script development and casting to on-set performance guidance and post-production oversight.</p>
+                </li>
+                <li>
+                    <h3>Editing</h3>
+                    <p>Using industry-standard software to assemble and refine footage, creating a final product that is both cohesive and compelling.</p>
+                </li>
+            </ul>
+        </section>
+
+        <hr class="rainbow-divider">
+
+        <section id="contact">
+            <h2>Contact</h2>
+            <p>Ready to collaborate on your next project? Let's talk.</p>
+            <form action="#" method="POST">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Your Email" required>
+                <input type="text" name="subject" placeholder="Subject">
+                <textarea name="message" rows="5" placeholder="Your Message" required></textarea>
+                <button type="submit" class="pink-btn">Send Message</button>
+            </form>
+            <div class="contact-info">
+                <p>Email: <a href="mailto:joe.al@example.com">joe.al@example.com</a></p>
+                <p>Phone: +1 (555) 123-4567</p>
+                <p>Social:
+                    <a href="#">LinkedIn</a> |
+                    <a href="#">Instagram</a>
+                </p>
+            </div>
+        </section>
+        
+        <hr class="rainbow-divider">
+
+        <section id="testimonials">
+            <h2>Testimonials</h2>
+            <blockquote>
+                <p>"Joe-Al's work on our last commercial was outstanding. The visuals were stunning and perfectly captured the essence of our brand."</p>
+                <footer>— Sarah L., Marketing Director</footer>
+            </blockquote>
+            <blockquote>
+                <p>"A true professional with an incredible eye for detail. The atmosphere he created on set was fantastic."</p>
+                <footer>— David K., Director</footer>
+            </blockquote>
+        </section>
+    </div>
+
+    <footer>
+        <p>© 2025 Joe-Al. All Rights Reserved. Built with <span style="color: var(--neon-green);">passion</span> and <span style="color: var(--bright-pink);">light</span>.</p>
+    </footer>
+
+</body>
+</html>
