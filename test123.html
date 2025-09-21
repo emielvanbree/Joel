@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>European Location Story Generator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; background-color: #f4f4f4; color: #333; }
+        h1 { text-align: center; color: #007bff; }
+        #app { display: flex; flex-direction: column; align-items: center; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; width: 100%; }
+        #api-key-input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 400px; }
+        #loading { text-align: center; font-style: italic; color: #555; margin-top: 20px; }
+        #results-container { width: 100%; margin-top: 20px; border: 1px solid #eee; padding: 20px; border-radius: 5px; background-color: #f9f9f9; display: none; }
+        #story { white-space: pre-wrap; font-size: 1rem; }
+        .error { color: red; margin-top: 10px; text-align: center; }
+        .info { font-size: 0.9rem; color: #666; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>European Location Story Generator</h1>
+    <div id="app">
+        <div id="controls">
+            <input type="password" id="api-key-input" placeholder="Enter your OpenAI API Key" autocomplete="off">
+            <div class="info">Your API key is stored only in your browser's session and is not sent anywhere other than to OpenAI's servers.</div>
+        </div>
+
+        <div id="loading">Enter your OpenAI API key to begin.</div>
+        <div id="error-message" class="error"></div>
+
+        <div id="results-container">
+            <h2>The Story of <span id="city-name"></span></h2>
+            <div id="story"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = {
+            restcountries: 'https://restcountries.com/v3.1/region/europe',
+            openmeteo_geocoding: 'https://geocoding-api.open-meteo.com/v1/reverse',
+            openmeteo_weather: 'https://api.open-meteo.com/v1/forecast'
+        };
+
+        const errorEl = document.getElementById('error-message');
+        const loadingEl = document.getElementById('loading');
+        const resultsEl = document.getElementById('results-container');
+        const apiKeyInput = document.getElementById('api-key-input');
+        
+        let lastKnownCity = null;
+        let isProcessing = false;
+        let watchId = null;
+
+        async function updateStoryForLocation(position) {
+            const openaiApiKey = apiKeyInput.value.trim();
+
+            if (!openaiApiKey) {
+                errorEl.textContent = 'Please enter your OpenAI API Key.';
+                return;
+            }
+
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            loadingEl.style.display = 'block';
+            resultsEl.style.display = 'none';
+            errorEl.textContent = '';
+            
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            let cityData;
+
+            try {
+                // Step 1: Get city data from Open-Meteo Geocoding
+                loadingEl.textContent = 'Fetching location data...';
+                const geocodingRes = await fetch(`${API_BASE_URL.openmeteo_geocoding}?latitude=${lat}&longitude=${lng}&count=1&language=en`);
+                if (!geocodingRes.ok) throw new Error('Open-Meteo Geocoding API request failed.');
+                const geocodingData = await geocodingRes.json();
+                
+                if (!geocodingData.results || geocodingData.results.length === 0) {
+                    throw new Error('Could not determine a city from your coordinates.');
+                }
+                cityData = geocodingData.results[0];
+                
+                // If the city hasn't changed, do nothing
+                if (lastKnownCity === cityData.name) {
+                    loadingEl.style.display = 'none';
+                    isProcessing = false;
+                    return;
+                }
+                
+                lastKnownCity = cityData.name;
+                
+                const { name, country_code } = cityData;
+                
+                loadingEl.textContent = `Fetching weather and country details for ${name}...`;
+
+                // Step 2: Get country details from REST Countries
+                const restcountriesRes = await fetch(`${API_BASE_URL.restcountries}`);
+                if (!restcountriesRes.ok) throw new Error('REST Countries API request failed.');
+                const restcountriesData = await restcountriesRes.json();
+                const countryData = restcountriesData.find(c => c.cca2 === country_code);
+                
+                if (!countryData) {
+                    throw new Error('Could not find detailed country data.');
+                }
+
+                // Step 3: Get weather data from Open-Meteo Weather
+                const weatherRes = await fetch(`${API_BASE_URL.openmeteo_weather}?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,weather_code`);
+                if (!weatherRes.ok) throw new Error('Open-Meteo Weather API request failed.');
+                const weatherData = await weatherRes.json();
+                const currentWeather = weatherData.current;
+
+                // Combine all data into a single object for the story prompt
+                const combinedData = {
+                    cityName: name,
+                    countryName: countryData.name.common,
+                    population: countryData.population,
+                    countryDetails: {
+                        capital: countryData?.capital?.[0],
+                        languages: countryData?.languages,
+                        currency: countryData?.currencies ? Object.values(countryData.currencies)[0] : { name: 'N/A', symbol: '' },
+                        timezone: countryData?.timezones?.[0]
+                    },
+                    weather: {
+                        temperature: currentWeather?.temperature_2m,
+                        windSpeed: currentWeather?.wind_speed_10m,
+                        weatherCode: currentWeather?.weather_code
+                    }
+                };
+                
+                // Step 4: Call ChatGPT with the combined data
+                loadingEl.textContent = `Generating a new story for ${name}...`;
+                const prompt = `Write a compelling and creative story about the city of ${name}, weaving in the following factual data seamlessly:
+                - Country: ${combinedData.countryName}
+                - Population: ${combinedData.population}
+                - Capital: ${combinedData.countryDetails.capital}
+                - Languages: ${Object.values(combinedData.countryDetails.languages).join(', ')}
+                - Currency: ${combinedData.countryDetails.currency.name} (${combinedData.countryDetails.currency.symbol})
+                - Timezone: ${combinedData.countryDetails.timezone}
+                - Current weather: a temperature of ${combinedData.weather.temperature}°C with a wind speed of ${combinedData.weather.windSpeed} km/h.
+
+                The story should be 3-4 paragraphs long, coherent, and logical.`;
+                
+                const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiApiKey}` },
+                    body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], max_tokens: 500, })
+                });
+
+                if (!openaiRes.ok) {
+                    const errorDetails = await openaiRes.json();
+                    throw new Error(`OpenAI API request failed: ${errorDetails.error?.message || openaiRes.statusText}`);
+                }
+
+                const openaiData = await openaiRes.json();
+                const storyText = openaiData.choices[0].message.content;
+
+                // Step 5: Display the results
+                document.getElementById('city-name').textContent = name;
+                document.getElementById('story').textContent = storyText;
+                resultsEl.style.display = 'block';
+
+            } catch (err) {
+                console.error('Error:', err);
+                errorEl.textContent = `An error occurred: ${err.message}. Please check your API key and internet connection.`;
+            } finally {
+                loadingEl.style.display = 'none';
+                isProcessing = false;
+            }
+        }
+        
+        function handleGeolocationError(error) {
+            loadingEl.style.display = 'none';
+            if (error.code === error.PERMISSION_DENIED) {
+                errorEl.textContent = 'Geolocation permission denied. Please enable location services for this site to work.';
+            } else {
+                errorEl.textContent = `Geolocation error: ${error.message}`;
+            }
+        }
+        
+        apiKeyInput.addEventListener('input', () => {
+            if (apiKeyInput.value.trim()) {
+                startLocationWatch();
+            } else {
+                stopLocationWatch();
+            }
+        });
+
+        function startLocationWatch() {
+            if (watchId === null) {
+                loadingEl.textContent = 'Awaiting location and generating story...';
+                watchId = navigator.geolocation.watchPosition(updateStoryForLocation, handleGeolocationError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 30000,
+                    timeout: 27000
+                });
+            }
+        }
+
+        function stopLocationWatch() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                loadingEl.textContent = 'Enter your OpenAI API key to begin.';
+                resultsEl.style.display = 'none';
+                errorEl.textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>
