@@ -163,7 +163,7 @@
 
             } catch (err) {
                 console.error('Error:', err);
-                errorEl.textContent = `An error occurred: ${err.message}. Please check your API key and internet connection.`;
+                errorEl.textContent = `An error occurred: ${err.message}. This may be a CORS issue. Try using a local web server (e.g., Python) to serve the file and ensure your API key is correct.`;
             } finally {
                 loadingEl.style.display = 'none';
                 isProcessing = false;
