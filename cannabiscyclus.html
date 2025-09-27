@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quick One Grow Tracker – Cannabis</title>
+    <style>
+        /*
+         * Kleurenpalet Groeicyclus Cannabis
+         * Aarde Bruin: #4D3A31 (fg)
+         * Vegetatieve Groen: #38761D (main-text)
+         * Limoen Groen: #A9C439 (cta)
+         * Zaailing Groen: #90B47A (muted/line)
+         * Licht Grijs: #F5F5F5 (bg/pill)
+         */
+        :root{
+            --bg: #F5F5F5;
+            --fg: #4D3A31; /* Hoofdtitels/Headers - Aarde Bruin */
+            --main-text: #38761D; /* Body Tekst - Vegetatieve Groen */
+            --muted: #90B47A; /* Secundaire Tekst - Zaailing Groen */
+            --card: #FFFFFF;
+            --line: #90B47A; /* Randen/Lijnen - Zaailing Groen */
+            --pill: #F5F5F5; /* Tabs/Pills Achtergrond - Licht Grijs */
+            --cta: #A9C439; /* Primaire Knoppen - Limoen Groen */
+            --cta-hover: #7D932A; /* Limoen Groen - Donkerder */
+            --danger: #CC0000; /* Fouten/Verwijderen */
+            --radius: 18px;
+        }
+
+        /* Basis en Typografie */
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+            background:var(--bg);
+            color:var(--main-text); /* Hoofdtekst in Vegetatieve Groen */
+        }
+        h1{font-size:24px; margin:0; font-weight:700; color:var(--fg)} /* Titels in Aarde Bruin */
+        .hint{font-size:12px; color:var(--muted)}
+        .section-title{font-weight:600; margin:16px 0 8px; color:var(--fg)}
+
+        /* Header (Sticky & Mobiel Vriendelijk) */
+        header{
+            position:sticky;
+            top:0;
+            z-index:10;
+            background:rgba(245, 245, 245, .9); /* Lichte Achtergrond */
+            backdrop-filter:saturate(1.2) blur(6px);
+            border-bottom:1px solid var(--line);
+        }
+        .container{max-width:1080px; margin:0 auto; padding:12px 16px} 
+        .header-content{
+            display:flex;
+            flex-wrap: wrap; 
+            gap: 12px 8px; 
+            align-items:center;
+            padding: 8px 0;
+        }
+        /* Mobile aanpassing: plaats de knoppen-rij onder de titel op kleine schermen */
+        .header-content h1{flex-basis: 100%; font-size: 20px;}
+        .header-actions{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-left:auto;
+        }
+        @media (min-width: 600px){ 
+            .header-content h1{flex-basis: auto;}
+            .header-actions{margin-left:auto; flex-grow:1; justify-content: flex-end;}
+        }
+
+        /* Knoppen & Formulieren */
+        button, .btn, .tab.active{
+            appearance:none;
+            border:1px solid var(--line);
+            padding:8px 12px;
+            border-radius:16px;
+            box-shadow:0 1px 0 rgba(0,0,0,.04);
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--fg);
+        }
+        /* Primaire CTA knoppen */
+        #btnAdd, #btnAdd2{
+            background:var(--cta); 
+            border-color: var(--cta);
+            color: #fff;
+            font-weight: 600;
+        }
+        #btnAdd:hover, #btnAdd2:hover{
+            background:var(--cta-hover);
+            border-color: var(--cta-hover);
+        }
+        /* Secundaire knoppen (Import/Export/Archiveer) */
+        button, .btn{background:#fff; color: var(--main-text); border-color: var(--muted);}
+        button:hover, .btn:hover{background:var(--pill); color: var(--fg);}
+
+        input[type="date"], input[type="number"], input[type="text"], textarea, select{
+            border:1px solid var(--line);
+            border-radius:10px;
+            padding:6px 10px;
+            color: var(--main-text);
+        }
+        /* Nieuwe klasse voor strakke uitlijning van invoervelden */
+        .field-group{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px; 
+            font-size: 14px;
+            color: var(--main-text);
+        }
+        .field-group input[type="number"] {
+            width: 64px;
+            text-align: center;
+        }
+
+
+        /* Kaarten, Tabs & Layout */
+        main.container{padding:20px 16px 40px}
+        .grid{display:grid; grid-template-columns:1fr; gap:20px}
+        @media (min-width:700px){ .grid{grid-template-columns:1fr 1fr} } 
+
+        .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 2px 4px rgba(0,0,0,.05); overflow:hidden}
+        
+        /* OPNIEUW GEDEFINIEERDE CARD HEADER STYLING */
+        .card-h{
+            padding:14px; 
+            display:flex; 
+            flex-direction: column; /* Alles verticaal stapelen in de header */
+            gap: 12px; 
+            align-items:flex-start; 
+        }
+        /* Naamveld en input */
+        .row-name{
+            display: flex;
+            gap: 8px;
+            width: 100%; 
+        }
+        .row-name input{flex: 1;} 
+
+        /* Soort dropdown en pil */
+        .row-strain{
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .row-strain select { max-width: 250px; }
+        
+        /* Datum, Leeftijd en Knoppen */
+        .row-info{
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 8px 12px; 
+            align-items: center;
+            font-size: 13px;
+            color: var(--muted);
+            width: 100%; 
+        }
+        .row-info label{ 
+            display: flex; 
+            gap: 6px; 
+            align-items: center;
+        }
+        .row-info span:not(.pill) { white-space: nowrap; } 
+        
+        /* Actieknoppen (Archiveer/Verwijder) */
+        .row-info .action-buttons { 
+            margin-left: auto; 
+            display: flex;
+            gap: 8px;
+        }
+        @media (max-width: 600px) {
+            .row-info .action-buttons { 
+                margin-left: 0; 
+                flex-basis: 100%; 
+                justify-content: flex-start;
+            }
+        }
+        /* EINDE OPNIEUW GEDEFINIEERDE CARD HEADER STYLING */
+
+        .pill{font-size:12px; background:var(--pill); border:1px solid var(--line); color:var(--main-text); padding:2px 8px; border-radius:999px}
+        /* ... (Rest van de CSS blijft hetzelfde) ... */
+        .tabs{display:flex; gap:6px; background:var(--pill); border-radius:999px; padding:4px; margin-top: 8px; flex-basis: 100%;}
+        @media (min-width: 500px){.tabs{flex-basis: auto; margin-top: 0;}} 
+
+        .tab{font-size:13px; padding:6px 10px; border-radius:999px; border:1px solid transparent; background:transparent; color: var(--main-text);}
+        .tab.active{background:#fff; border-color:var(--line); box-shadow:0 1px 0 rgba(0,0,0,.04); color: var(--fg); font-weight: 600;} 
+        .card-b{border-top:1px solid var(--line); padding:14px}
+        
+        /* Uploader & Galerij */
+        .uploader{display:flex; flex-wrap:wrap; gap:8px; padding:10px; background:var(--pill); border:1px solid var(--line); border-radius:14px}
+        .uploader input[type="file"]{flex-basis: 100%;} 
+        .uploader label, .uploader input[type="text"]{flex-shrink: 0;}
+        .uploader button{margin-left: auto; background: var(--cta); border-color: var(--cta); color: #fff;}
+        .uploader button:hover{background: var(--cta-hover); border-color: var(--cta-hover);}
+        
+        figure{margin:0; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff}
+        figure img{display:block; width:100%; height:auto; max-height:300px; object-fit:cover} 
+        figcaption{padding:10px; display:flex; justify-content:space-between; gap:10px; font-size:14px; flex-wrap: wrap;}
+        figcaption button{margin-top: 5px;}
+
+        /* Overige */
+        .muted{color:var(--muted)}
+        .danger{color:var(--danger); border-color: var(--danger) !important;}
+        .danger:hover{background: rgba(204, 0, 0, 0.1) !important;}
+        .empty{border:2px dashed var(--line); border-radius:var(--radius); padding:32px; text-align:center; background:#fff}
+        .archived{opacity:.6}
+        a{color: var(--cta);}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <h1 class="row" style="gap:8px;">Quick One Grow Tracker <span class="hint">(max. 12 plantjes)</span></h1>
+            <div class="header-actions">
+                <button id="btnAdd">+ Nieuwe plant</button>
+                <button id="btnExport">Export</button>
+                <label class="btn" style="cursor:pointer;">
+                    Import
+                    <input id="fileImport" type="file" accept="application/json" style="display:none;"/>
+                </label>
+                <label class="row hint" style="gap:6px;">
+                    <input id="chkArchived" type="checkbox"/> Toon gearchiveerden
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="empty" class="empty" style="display:none;">
+            <h2 style="margin:0; font-size:18px; color: var(--fg);">Nog geen plantjes</h2>
+            <p class="muted">Voeg je eerste plant toe en begin met tracken – foto’s, weken, en herinneringen.</p>
+            <button id="btnAdd2">+ Nieuwe plant</button>
+        </div>
+
+        <div id="grid" class="grid"></div>
+
+        <section id="archivedSection" style="display:none; margin-top:24px;">
+            <div class="section-title">Gearchiveerd</div>
+            <div id="archivedGrid" class="grid archived"></div>
+        </section>
+
+        <footer class="muted" style="margin-top:24px; font-size:13px;">Tip: klik op "<a href="#" style="color: inherit;">Export</a>" om een back-up te maken. Je data wordt lokaal in je browser opgeslagen.</footer>
+    </main>
+
+    <script>
+        // ===== Utilities (Ongewijzigd) =====
+        const uid = () => Math.random().toString(36).slice(2,10);
+        const todayISO = () => new Date().toISOString().slice(0,10);
+        const toISODate = d => new Date(d).toISOString().slice(0,10);
+        const fmtDate = d => new Date(d).toLocaleDateString('nl-NL');
+        const daysBetween = (a,b) => Math.floor((new Date(b) - new Date(a)) / 86400000);
+        const weekNumberSince = (start, at) => Math.floor(daysBetween(start, at) / 7);
+
+        // ===== RQS STRAIN DATA (Ongewijzigd) =====
+        const RQS_STRAINS = {
+            'Quick One (RQS)': {
+                type: 'Autoflower (Indica)',
+                hint: 'Cyclus: 8–9 weken totaal. Typische autoflower planning.',
+                schedule: { waterEveryDays:2, feedStartWeek:3, feedEveryDays:7, flushStartWeek:8, targetHarvestWeek:9 }
+            },
+            'Royal Dwarf (RQS)': {
+                type: 'Autoflower (Dwarf)',
+                hint: 'Cyclus: 9–10 weken totaal. Kan wat langer bloeien dan Quick One.',
+                schedule: { waterEveryDays:3, feedStartWeek:3, feedEveryDays:7, flushStartWeek:9, targetHarvestWeek:10 }
+            },
+            'Northern Light Auto (RQS)': {
+                type: 'Autoflower (Sterke Indica)',
+                hint: 'Cyclus: 10–12 weken totaal. Vraagt mogelijk meer voeding in de bloei.',
+                schedule: { waterEveryDays:2, feedStartWeek:4, feedEveryDays:5, flushStartWeek:10, targetHarvestWeek:12 }
+            },
+            'Shining Silver Haze (RQS)': {
+                type: 'Feminized (Sativa)',
+                hint: 'Groeit lang door, afhankelijk van wanneer je de klok omzet naar 12/12. Bloeitijd 9–11 weken.',
+                schedule: { waterEveryDays:3, feedStartWeek:1, feedEveryDays:7, flushStartWeek:15, targetHarvestWeek:17 } // Gemiddelde 6 weken groei, 11 weken bloei
+            },
+            'Fat Banana (RQS)': {
+                type: 'Feminized (Indica)',
+                hint: 'Bloeitijd 7–9 weken. Snelle bloeier met stevige voedingseisen.',
+                schedule: { waterEveryDays:2, feedStartWeek:1, feedEveryDays:5, flushStartWeek:11, targetHarvestWeek:13 } // Gemiddelde 5 weken groei, 8 weken bloei
+            },
+            'Onbekend/Algemeen': {
+                type: 'Gemiddeld/Algemeen',
+                hint: 'Gebaseerd op een algemene autoflower-cyclus van 10 weken. Pas dit aan op je soort!',
+                schedule: { waterEveryDays:2, feedStartWeek:2, feedEveryDays:7, flushStartWeek:9, targetHarvestWeek:10 }
+            }
+        };
+
+
+        // ===== Persistence (Leegmaken van Local Storage) =====
+        const LS_KEY = 'quickone_grow_tracker_v1_html';
+        const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw? JSON.parse(raw): null; } catch(e){ console.warn(e); return null; } };
+        const saveState = (s) => { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch(e){ console.warn(e); } };
+
+        const defaultSchedule = RQS_STRAINS['Quick One (RQS)'].schedule; 
+        let state = { plants:[], viewArchived:false }; 
+        saveState(state); 
+
+        // ===== DOM (Ongewijzigd) =====
+        const grid = document.getElementById('grid');
+        const archivedGrid = document.getElementById('archivedGrid');
+        const empty = document.getElementById('empty');
+        const archivedSection = document.getElementById('archivedSection');
+        const chkArchived = document.getElementById('chkArchived');
+
+        document.getElementById('btnAdd').onclick = addPlant;
+        document.getElementById('btnAdd2').onclick = addPlant;
+        document.getElementById('btnExport').onclick = exportJSON;
+        document.getElementById('fileImport').onchange = (e)=> e.target.files?.[0] && importJSON(e.target.files[0]);
+        chkArchived.onchange = (e)=>{ state.viewArchived = e.target.checked; saveAndRender(); };
+
+        function addPlant(){
+            if(state.plants.length >= 12){ alert('Maximaal 12 plantjes ondersteund.'); return; }
+            const d = todayISO();
+            const initialStrain = 'Quick One (RQS)';
+            state.plants.unshift({ 
+                id:uid(), 
+                name:`Plant ${state.plants.length+1}`, 
+                strain: initialStrain, 
+                plantedDate:d, 
+                archived:false, 
+                notes:'', 
+                schedule:{...RQS_STRAINS[initialStrain].schedule}, 
+                photos:[] 
+            });
+            saveAndRender();
+        }
+
+        function updatePlant(id, patch){
+            state.plants = state.plants.map(p=> p.id===id? {...p, ...patch}: p);
+            saveAndRender();
+        }
+        function removePlant(id){
+            if(!confirm('Verwijderen? Dit kan niet ongedaan worden gemaakt (alle foto\'s gaan mee).')) return;
+            state.plants = state.plants.filter(p=> p.id!==id);
+            saveAndRender();
+        }
+        function saveAndRender(){ saveState(state); render(); }
+
+        function exportJSON(){
+            const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = Object.assign(document.createElement('a'), { href:url, download:`quickone-tracker-${todayISO()}.json`});
+            a.click(); URL.revokeObjectURL(url);
+        }
+        function importJSON(file){
+            const r = new FileReader();
+            r.onload = ()=>{ try{ const parsed = JSON.parse(r.result); if(!parsed?.plants) throw new Error('Ongeldig bestand'); state = parsed; chkArchived.checked = !!state.viewArchived; saveAndRender(); }catch(e){ alert('Kan bestand niet lezen: '+e.message); } };
+            r.readAsText(file);
+        }
+
+        function fileToDataURL(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+
+        // ===== Rendering (Aangepast voor nieuwe CSS) =====
+        function render(){
+            const active = state.plants.filter(p=>!p.archived);
+            const archived = state.plants.filter(p=>p.archived);
+
+            empty.style.display = active.length? 'none':'block';
+            grid.innerHTML = '';
+            active.forEach(p=> grid.appendChild(renderPlantCard(p)) );
+
+            archivedSection.style.display = state.viewArchived && archived.length? 'block':'none';
+            archivedGrid.innerHTML = '';
+            if(state.viewArchived){ archived.forEach(p=> archivedGrid.appendChild(renderPlantCard(p)) ); }
+        }
+
+        function renderPlantCard(plant){
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            const h = document.createElement('div'); h.className = 'card-h';
+            const left = document.createElement('div'); left.className='grow-1';
+
+            // 1. Plantnaam Invoer
+            const row1 = document.createElement('div'); row1.className='row-name'; 
+            const nameInput = Object.assign(document.createElement('input'), { value: plant.name, type:'text' });
+            nameInput.style.fontSize='16px'; nameInput.style.fontWeight='600'; nameInput.style.border='none'; nameInput.style.outline='none';
+            nameInput.oninput = (e)=> updatePlant(plant.id, { name:e.target.value });
+            row1.append(nameInput);
+            
+            // 2. Soort Keuze Dropdown
+            const rowStrain = document.createElement('div'); rowStrain.className='row-strain';
+            const strainSelect = document.createElement('select');
+            for (const [key, value] of Object.entries(RQS_STRAINS)) {
+                const option = Object.assign(document.createElement('option'), { value: key, text: key });
+                strainSelect.appendChild(option);
+            }
+            strainSelect.value = plant.strain; 
+            strainSelect.onchange = (e) => {
+                const newStrain = e.target.value;
+                const newSchedule = RQS_STRAINS[newStrain].schedule;
+                updatePlant(plant.id, { strain: newStrain, schedule: newSchedule });
+            };
+            
+            const strainType = document.createElement('span'); 
+            strainType.className='pill'; 
+            strainType.textContent = RQS_STRAINS[plant.strain]?.type || 'Onbekend'; 
+            rowStrain.append(strainSelect, strainType);
+
+            // 3. Datum & Leeftijd & Acties
+            const rowInfo = document.createElement('div'); rowInfo.className='row-info';
+
+            // Geplant datum
+            const plantedLbl = document.createElement('label'); 
+            plantedLbl.textContent = 'Geplant:';
+            const dateInput = Object.assign(document.createElement('input'), { type:'date', value: toISODate(plant.plantedDate) });
+            dateInput.onchange = (e)=> updatePlant(plant.id, { plantedDate: e.target.value });
+            plantedLbl.appendChild(dateInput);
+
+            // Leeftijd
+            const ageDays = daysBetween(plant.plantedDate, new Date());
+            const ageWeeks = Math.floor(ageDays/7);
+            const age = document.createElement('span'); age.textContent = `Leeftijd: ${ageWeeks} wk (${ageDays} d)`;
+
+            // Knoppen groep
+            const actionButtons = document.createElement('div'); actionButtons.className = 'action-buttons';
+            const archiveBtn = document.createElement('button'); archiveBtn.className='btn'; archiveBtn.textContent = plant.archived? 'Deblokkeren':'Archiveer cyclus';
+            archiveBtn.onclick = ()=> updatePlant(plant.id, { archived: !plant.archived });
+
+            const delBtn = document.createElement('button'); delBtn.className='btn danger'; delBtn.textContent='Verwijderen'; delBtn.onclick = ()=> removePlant(plant.id);
+            actionButtons.append(archiveBtn, delBtn);
+
+            rowInfo.append(plantedLbl, age, actionButtons);
+
+            left.append(row1, rowStrain, rowInfo); 
+
+            const tabs = document.createElement('div'); tabs.className='tabs';
+            const tabTimeline = document.createElement('button'); tabTimeline.className='tab active'; tabTimeline.textContent='Tijdlijn';
+            const tabSchedule = document.createElement('button'); tabSchedule.className='tab'; tabSchedule.textContent='Herinneringen';
+            const tabNotes = document.createElement('button'); tabNotes.className='tab'; tabNotes.textContent='Notities';
+            tabs.append(tabTimeline, tabSchedule, tabNotes);
+
+            h.append(left, tabs); card.appendChild(h);
+
+            const bodyTimeline = document.createElement('div'); bodyTimeline.className='card-b';
+            const bodySchedule = document.createElement('div'); bodySchedule.className='card-b'; bodySchedule.style.display='none';
+            const bodyNotes = document.createElement('div'); bodyNotes.className='card-b'; bodyNotes.style.display='none';
+
+            // Uploader
+            const uploader = document.createElement('div'); uploader.className='uploader';
+            const file = Object.assign(document.createElement('input'), { type:'file', accept:'image/*' });
+            const dLbl = document.createElement('label'); dLbl.className='muted'; dLbl.textContent='Datum: ';
+            const dIn = Object.assign(document.createElement('input'), {type:'date', value: todayISO()});
+            dLbl.appendChild(dIn);
+            const note = Object.assign(document.createElement('input'), {type:'text', placeholder:'Opmerking (optioneel)'});
+            note.style.minWidth = '180px'; note.style.flex='1';
+            const weekSpan = document.createElement('span'); weekSpan.className='muted'; weekSpan.style.fontSize='12px'; weekSpan.textContent = weekLabel(plant.plantedDate, dIn.value);
+            dIn.onchange = ()=> weekSpan.textContent = weekLabel(plant.plantedDate, dIn.value);
+            const upBtn = document.createElement('button'); upBtn.textContent='Upload';
+            upBtn.onclick = async()=>{
+                if(!file.files[0]) return alert('Kies eerst een foto.');
+                const dataURL = await fileToDataURL(file.files[0]);
+                const photo = { id:uid(), dataURL, date:dIn.value || todayISO(), note: note.value || '' };
+                const photos = [...plant.photos, photo].sort((a,b)=> new Date(a.date)-new Date(b.date));
+                updatePlant(plant.id, { photos }); file.value=''; note.value=''; dIn.value = todayISO(); weekSpan.textContent = weekLabel(plant.plantedDate, dIn.value);
+            };
+            uploader.append(file, dLbl, note, weekSpan, upBtn);
+            bodyTimeline.appendChild(uploader);
+
+            // Galerij
+            const gallery = document.createElement('div'); gallery.style.marginTop='12px'; gallery.style.display='grid'; gallery.style.gridTemplateColumns='1fr'; gallery.style.gap='12px';
+            if(plant.photos.length===0){
+                const p = document.createElement('div'); p.className='muted'; p.textContent = "Nog geen foto's – voeg je eerste week 0 foto toe hierboven."; gallery.appendChild(p);
+            }
+            plant.photos.sort((a,b)=> new Date(a.date)-new Date(b.date)).forEach(ph=>{
+                const fig = document.createElement('figure');
+                const img = Object.assign(document.createElement('img'), { src: ph.dataURL, alt:'plant' });
+                const cap = document.createElement('figcaption');
+                const left = document.createElement('div');
+                const title = document.createElement('div'); title.style.fontWeight='600'; title.textContent = `${plant.name} – ${fmtDate(ph.date)} (Week ${weekNumberSince(plant.plantedDate, ph.date)})`;
+                const sub = document.createElement('div'); sub.className='muted'; sub.textContent = ph.note || '';
+                left.append(title, sub);
+                const del = document.createElement('button'); del.className='btn danger'; del.textContent='Verwijder'; del.onclick=()=>{
+                    const photos = plant.photos.filter(x=> x.id!==ph.id); updatePlant(plant.id, { photos });
+                };
+                cap.append(left, del); fig.append(img, cap); gallery.appendChild(fig);
+            });
+            bodyTimeline.appendChild(gallery);
+
+            // Schedule Body met Mooie Uitlijning (Ongewijzigd)
+            const s = plant.schedule;
+            const strainHint = RQS_STRAINS[plant.strain]?.hint || RQS_STRAINS['Onbekend/Algemeen'].hint;
+            bodySchedule.innerHTML = `
+                <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <div class="section-title">Water geven</div>
+                        <div class="field-group">
+                            <span>Elke</span>
+                            <input id="wEvery-${plant.id}" type="number" min="1" value="${s.waterEveryDays}">
+                            <span>dagen</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="section-title">Voeding</div>
+                        <div class="field-group">
+                            <span>Start in week</span>
+                            <input id="fStart-${plant.id}" type="number" min="0" value="${s.feedStartWeek}">
+                        </div>
+                        <div class="field-group">
+                            <span>Frequentie: elke</span>
+                            <input id="fEvery-${plant.id}" type="number" min="1" value="${s.feedEveryDays}">
+                            <span>dagen</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="section-title">Flush & Oogst</div>
+                        <div class="field-group">
+                            <span>Flush starten in week</span>
+                            <input id="flStart-${plant.id}" type="number" min="0" value="${s.flushStartWeek}">
+                        </div>
+                        <div class="field-group">
+                            <span>Doel oogstweek</span>
+                            <input id="harv-${plant.id}" type="number" min="0" value="${s.targetHarvestWeek}">
+                        </div>
+                    </div>
+                    <div class="muted" style="font-size:14px; align-self:start;">
+                        <strong>Soort Richtlijn:</strong> ${strainHint}
+                        <br><br>
+                        Pas frequentie aan op potmaat, substraat en klimaat.
+                    </div>
+                </div>
+                <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap;">
+                    <button id="btnICS-${plant.id}" class="btn">Export .ics (kalender)</button>
+                    <span class="muted">Browsermeldingen:</span>
+                    <button id="btnPerm-${plant.id}" class="btn">Sta meldingen toe</button>
+                    <button id="btnTest-${plant.id}" class="btn">Test</button>
+                    <span class="muted">(Geplande meldingen vereisen dat de pagina open staat.)</span>
+                </div>`;
+
+            // Inputs koppelen
+            setTimeout(()=>{
+                const clamp = (n,min)=> Math.max(min, Number(n||min));
+                document.getElementById(`wEvery-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, waterEveryDays: clamp(e.target.value,1)} });
+                document.getElementById(`fStart-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, feedStartWeek: clamp(e.target.value,0)} });
+                document.getElementById(`fEvery-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, feedEveryDays: clamp(e.target.value,1)} });
+                document.getElementById(`flStart-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, flushStartWeek: clamp(e.target.value,0)} });
+                document.getElementById(`harv-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, targetHarvestWeek: clamp(e.target.value,0)} });
+                document.getElementById(`btnICS-${plant.id}`).onclick = ()=> exportICS(plant);
+                document.getElementById(`btnPerm-${plant.id}`).onclick = requestNotifPerm;
+                document.getElementById(`btnTest-${plant.id}`).onclick = ()=> testNotif(plant);
+            });
+
+            // Notities
+            const ta = document.createElement('textarea'); ta.placeholder='Notities over water, EC/PPM, pH, training, etc.'; ta.value = plant.notes || ''; ta.style.width='100%'; ta.style.minHeight='120px';
+            ta.oninput = (e)=> updatePlant(plant.id, { notes:e.target.value });
+            bodyNotes.appendChild(ta);
+
+            // Tabs functionaliteit
+            tabTimeline.onclick = ()=> { tabTimeline.classList.add('active'); tabSchedule.classList.remove('active'); tabNotes.classList.remove('active'); bodyTimeline.style.display='block'; bodySchedule.style.display='none'; bodyNotes.style.display='none'; };
+            tabSchedule.onclick = ()=> { tabSchedule.classList.add('active'); tabTimeline.classList.remove('active'); tabNotes.classList.remove('active'); bodyTimeline.style.display='none'; bodySchedule.style.display='block'; bodyNotes.style.display='none'; };
+            tabNotes.onclick = ()=> { tabNotes.classList.add('active'); tabTimeline.classList.remove('active'); tabSchedule.classList.remove('active'); bodyTimeline.style.display='none'; bodySchedule.style.display='none'; bodyNotes.style.display='block'; };
+
+            card.append(bodyTimeline, bodySchedule, bodyNotes);
+            return card;
+
+            function weekLabel(start, at){ return `Week ${weekNumberSince(start, at)}`; }
+        }
+
+        // FUNCTIES VOOR MELDINGEN ZIJN NU VERBETERD VOOR CONTROLE
+        function requestNotifPerm(){ 
+            try{ 
+                if(!("Notification" in window)){
+                     alert('Browser ondersteunt meldingen niet.');
+                     return;
+                }
+                // Vraag toestemming aan en geef feedback
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification("Toestemming gelukt!", { body: "Je kunt nu testmeldingen versturen. Probeer de 'Test' knop." });
+                    } else if (permission === 'denied') {
+                        alert('Toestemming voor meldingen geweigerd. Je moet dit handmatig in de browserinstellingen aanpassen.');
+                    }
+                });
+            }catch(e){ 
+                console.error(e);
+                alert('Er is een fout opgetreden bij het aanvragen van toestemming.');
+            } 
+        }
+
+        function testNotif(plant){ 
+            try{ 
+                if(!("Notification" in window)){
+                    alert('Browser ondersteunt meldingen niet.');
+                    return;
+                }
+                
+                // Controleer expliciet de toestemmingsstatus
+                if(Notification.permission === 'granted'){ 
+                    new Notification(`Test – ${plant.name}`, { 
+                        body:'Dit is een testmelding van de Grow Tracker!',
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%2338761D" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 15.5l-3-3 1.41-1.41 1.59 1.59L17.59 8 19 9.41l-8 8.09z"/></svg>'
+                    }); 
+                } else { 
+                    alert(`Melding mislukt: Toestemming is op dit moment "${Notification.permission}". Klik op "Sta meldingen toe" en accepteer de browserprompt die verschijnt.`); 
+                } 
+            }catch(e){ 
+                console.error(e);
+                alert('Fout bij het versturen van de melding.'); 
+            } 
+        }
+
+        function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate()+days); return d; }
+        function setHourMin(date,h,m){ const d = new Date(date); d.setHours(h,m,0,0); return d; }
+        function escapeICS(s){ return String(s).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;'); }
+
+        function exportICS(plant){
+            const { plantedDate, schedule } = plant;
+            const planted = new Date(plantedDate);
+            const events = [];
+            const dt = (d)=>{
+                const pad = n=> String(n).padStart(2,'0');
+                return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+            };
+            const vEvent = ({ summary, start, durationMin=30, description='' })=>{
+                const end = new Date(start.getTime()+durationMin*60000);
+                return [
+                    'BEGIN:VEVENT',
+                    `UID:${uid()}@quickone`,
+                    `DTSTAMP:${dt(new Date())}`,
+                    `DTSTART:${dt(start)}`,
+                    `DTEND:${dt(end)}`,
+                    `SUMMARY:${escapeICS(summary)}`,
+                    description? `DESCRIPTION:${escapeICS(description)}`: null,
+                    'END:VEVENT',
+                ].filter(Boolean).join('\r\n');
+            };
+
+            const harvestDate = addDays(planted, schedule.targetHarvestWeek*7);
+            for(let d=new Date(planted); d<=harvestDate; d=addDays(d, schedule.waterEveryDays)){
+                const start = setHourMin(d, 9, 0);
+                events.push(vEvent({ summary:`Water – ${plant.name}`, start, durationMin:15 }));
+            }
+            const feedStart = addDays(planted, schedule.feedStartWeek*7);
+            for(let d=new Date(feedStart); d<=harvestDate; d=addDays(d, schedule.feedEveryDays)){
+                const start = setHourMin(d, 10, 0);
+                events.push(vEvent({ summary:`Voeding – ${plant.name}`, start, durationMin:20, description:'Controleer kweekschema voor groeivoeding vs. bloeivoeding.' }));
+            }
+            const flushStart = addDays(planted, schedule.flushStartWeek*7);
+            events.push(vEvent({ summary:`Start flush – ${plant.name}`, start:setHourMin(flushStart,9,0), durationMin:30 }));
+            const harv = addDays(planted, schedule.targetHarvestWeek*7);
+            events.push(vEvent({ summary:`Oogst (doel) – ${plant.name}`, start:setHourMin(harv,11,0), durationMin:60, description:'Controleer trichomen (melkachtig/amber).' }));
+
+            const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//QuickOne Tracker HTML//NL', ...events, 'END:VCALENDAR'].join('\r\n');
+            const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+            const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${plant.name.replace(/\s+/g,'-')}-reminders.ics`});
+            a.click(); setTimeout(()=> URL.revokeObjectURL(a.href), 0);
+        }
+
+        chkArchived.checked = !!state.viewArchived;
+        render();
+    </script>
+</body>
+</html>
