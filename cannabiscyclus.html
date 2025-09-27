@@ -33,9 +33,9 @@
             margin:0;
             font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
             background:var(--bg);
-            color:var(--main-text); /* Hoofdtekst in Vegetatieve Groen */
+            color:var(--main-text); 
         }
-        h1{font-size:24px; margin:0; font-weight:700; color:var(--fg)} /* Titels in Aarde Bruin */
+        h1{font-size:24px; margin:0; font-weight:700; color:var(--fg)} 
         .hint{font-size:12px; color:var(--muted)}
         .section-title{font-weight:600; margin:16px 0 8px; color:var(--fg)}
 
@@ -44,7 +44,7 @@
             position:sticky;
             top:0;
             z-index:10;
-            background:rgba(245, 245, 245, .9); /* Lichte Achtergrond */
+            background:rgba(245, 245, 245, .9); 
             backdrop-filter:saturate(1.2) blur(6px);
             border-bottom:1px solid var(--line);
         }
@@ -56,7 +56,7 @@
             align-items:center;
             padding: 8px 0;
         }
-        /* Mobile aanpassing: plaats de knoppen-rij onder de titel op kleine schermen */
+        
         .header-content h1{flex-basis: 100%; font-size: 20px;}
         .header-actions{
             display: flex;
@@ -127,7 +127,7 @@
         .card-h{
             padding:14px; 
             display:flex; 
-            flex-direction: column; /* Alles verticaal stapelen in de header */
+            flex-direction: column; 
             gap: 12px; 
             align-items:flex-start; 
         }
@@ -177,10 +177,42 @@
                 justify-content: flex-start;
             }
         }
-        /* EINDE OPNIEUW GEDEFINIEERDE CARD HEADER STYLING */
+        /* NIEUW: Acties boven de tabs */
+        .actions-bar {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 1px dashed var(--line);
+            padding-bottom: 8px;
+        }
+        /* Knop voor een Actie Item */
+        .action-item {
+            background: #fff;
+            border: 2px solid var(--cta);
+            color: var(--cta);
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,.08);
+            transition: background .2s;
+        }
+        .action-item:hover {
+            background: rgba(169, 196, 57, 0.1); /* Lichte limoen hover */
+        }
+        .action-item.feed {
+            border-color: #FFA500; /* Oranje rand voor voeding */
+            color: #FFA500;
+        }
+        .action-item.flush {
+            border-color: #00BFFF; /* Blauwe rand voor flush */
+            color: #00BFFF;
+        }
+        /* EINDE NIEUWE STIJL */
+
 
         .pill{font-size:12px; background:var(--pill); border:1px solid var(--line); color:var(--main-text); padding:2px 8px; border-radius:999px}
-        /* ... (Rest van de CSS blijft hetzelfde) ... */
         .tabs{display:flex; gap:6px; background:var(--pill); border-radius:999px; padding:4px; margin-top: 8px; flex-basis: 100%;}
         @media (min-width: 500px){.tabs{flex-basis: auto; margin-top: 0;}} 
 
@@ -245,13 +277,18 @@
     </main>
 
     <script>
-        // ===== Utilities (Ongewijzigd) =====
+        // ===== Utilities =====
         const uid = () => Math.random().toString(36).slice(2,10);
         const todayISO = () => new Date().toISOString().slice(0,10);
         const toISODate = d => new Date(d).toISOString().slice(0,10);
         const fmtDate = d => new Date(d).toLocaleDateString('nl-NL');
+        const fmtShortDate = () => new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+        
         const daysBetween = (a,b) => Math.floor((new Date(b) - new Date(a)) / 86400000);
         const weekNumberSince = (start, at) => Math.floor(daysBetween(start, at) / 7);
+        const addDays = (date, days)=>{ const d = new Date(date); d.setDate(d.getDate()+days); return d; };
+        const setHourMin = (date,h,m)=>{ const d = new Date(date); d.setHours(h,m,0,0); return d; };
+        const escapeICS = (s)=>{ return String(s).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;'); };
 
         // ===== RQS STRAIN DATA (Ongewijzigd) =====
         const RQS_STRAINS = {
@@ -273,12 +310,12 @@
             'Shining Silver Haze (RQS)': {
                 type: 'Feminized (Sativa)',
                 hint: 'Groeit lang door, afhankelijk van wanneer je de klok omzet naar 12/12. Bloeitijd 9–11 weken.',
-                schedule: { waterEveryDays:3, feedStartWeek:1, feedEveryDays:7, flushStartWeek:15, targetHarvestWeek:17 } // Gemiddelde 6 weken groei, 11 weken bloei
+                schedule: { waterEveryDays:3, feedStartWeek:1, feedEveryDays:7, flushStartWeek:15, targetHarvestWeek:17 } 
             },
             'Fat Banana (RQS)': {
                 type: 'Feminized (Indica)',
                 hint: 'Bloeitijd 7–9 weken. Snelle bloeier met stevige voedingseisen.',
-                schedule: { waterEveryDays:2, feedStartWeek:1, feedEveryDays:5, flushStartWeek:11, targetHarvestWeek:13 } // Gemiddelde 5 weken groei, 8 weken bloei
+                schedule: { waterEveryDays:2, feedStartWeek:1, feedEveryDays:5, flushStartWeek:11, targetHarvestWeek:13 } 
             },
             'Onbekend/Algemeen': {
                 type: 'Gemiddeld/Algemeen',
@@ -288,16 +325,53 @@
         };
 
 
-        // ===== Persistence (Leegmaken van Local Storage) =====
+        // ===== Persistence & State Management =====
         const LS_KEY = 'quickone_grow_tracker_v1_html';
-        const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw? JSON.parse(raw): null; } catch(e){ console.warn(e); return null; } };
-        const saveState = (s) => { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch(e){ console.warn(e); } };
+        
+        let state = { plants:[], viewArchived:false, actionsCompletedToday: { date: todayISO(), completed: [] } };
+        
+        const loadState = () => { 
+            try { 
+                const raw = localStorage.getItem(LS_KEY); 
+                const loadedState = raw ? JSON.parse(raw) : null; 
+                
+                if (loadedState) {
+                    // Controlleer of de 'actionsCompletedToday' van vandaag is.
+                    if (loadedState.actionsCompletedToday && loadedState.actionsCompletedToday.date === todayISO()) {
+                        state = loadedState;
+                    } else {
+                        // Reset de voltooide acties als het een nieuwe dag is, maar behoud de plants en viewArchived
+                        state.plants = loadedState.plants || [];
+                        state.viewArchived = loadedState.viewArchived || false;
+                        saveState(state); // Sla de geresette state op
+                    }
+                }
+            } catch(e){ 
+                console.warn(e); 
+            } 
+        };
+        
+        const saveState = (s) => { 
+            try { 
+                localStorage.setItem(LS_KEY, JSON.stringify(s)); 
+            } catch(e){ 
+                console.warn(e); 
+            } 
+        };
 
-        const defaultSchedule = RQS_STRAINS['Quick One (RQS)'].schedule; 
-        let state = { plants:[], viewArchived:false }; 
-        saveState(state); 
-
-        // ===== DOM (Ongewijzigd) =====
+        // Functie om een actie als voltooid te markeren
+        function completeAction(plantId, actionType) {
+            const actionKey = `${plantId}-${actionType}`;
+            if (!state.actionsCompletedToday.completed.includes(actionKey)) {
+                state.actionsCompletedToday.completed.push(actionKey);
+                saveAndRender();
+            }
+        }
+        
+        // Laad de state bij opstarten
+        loadState(); 
+        
+        // ===== Core Logic (Ongewijzigd) =====
         const grid = document.getElementById('grid');
         const archivedGrid = document.getElementById('archivedGrid');
         const empty = document.getElementById('empty');
@@ -339,21 +413,90 @@
         function saveAndRender(){ saveState(state); render(); }
 
         function exportJSON(){
-            const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+            const { actionsCompletedToday, ...exportState } = state; // Exclude daily actions from export
+            const blob = new Blob([JSON.stringify(exportState,null,2)], {type:'application/json'});
             const url = URL.createObjectURL(blob);
             const a = Object.assign(document.createElement('a'), { href:url, download:`quickone-tracker-${todayISO()}.json`});
             a.click(); URL.revokeObjectURL(url);
         }
         function importJSON(file){
             const r = new FileReader();
-            r.onload = ()=>{ try{ const parsed = JSON.parse(r.result); if(!parsed?.plants) throw new Error('Ongeldig bestand'); state = parsed; chkArchived.checked = !!state.viewArchived; saveAndRender(); }catch(e){ alert('Kan bestand niet lezen: '+e.message); } };
+            r.onload = ()=>{ 
+                try{ 
+                    const parsed = JSON.parse(r.result); 
+                    if(!parsed?.plants) throw new Error('Ongeldig bestand'); 
+                    
+                    // Alleen plants en viewArchived importeren, dagelijkse acties resetten
+                    state.plants = parsed.plants;
+                    state.viewArchived = parsed.viewArchived || false;
+                    
+                    chkArchived.checked = !!state.viewArchived; 
+                    saveAndRender(); 
+                }catch(e){ 
+                    alert('Kan bestand niet lezen: '+e.message); 
+                } 
+            };
             r.readAsText(file);
         }
 
         function fileToDataURL(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
-        // ===== Rendering (Aangepast voor nieuwe CSS) =====
+
+        // ===== ACTIE BEREKENING LOGICA (Ongewijzigd) =====
+        function getPlantActions(plant) {
+            if (plant.archived) return [];
+
+            const daysSincePlanting = daysBetween(plant.plantedDate, todayISO());
+            const weeksSincePlanting = weekNumberSince(plant.plantedDate, todayISO());
+            const { waterEveryDays, feedStartWeek, feedEveryDays, flushStartWeek } = plant.schedule;
+            const actions = [];
+            const actionDate = fmtShortDate(); // Gebruik de korte datum voor het label
+
+            // 1. Water geven
+            if (daysSincePlanting % waterEveryDays === 0) {
+                actions.push({ 
+                    type: 'water', 
+                    label: `💧 Water (${actionDate})`, 
+                    css: 'water' 
+                });
+            }
+
+            // 2. Voeding (Voeding begint in een specifieke week)
+            if (weeksSincePlanting >= feedStartWeek) {
+                if (daysSincePlanting % feedEveryDays === 0) {
+                    actions.push({ 
+                        type: 'feed', 
+                        label: `🥦 Voeding (${actionDate})`, 
+                        css: 'feed' 
+                    });
+                }
+            }
+
+            // 3. Flush (Flush begint in een specifieke week)
+            if (weeksSincePlanting >= flushStartWeek) {
+                 // Toon de flush taak alleen de eerste paar dagen van de startweek.
+                 if (weeksSincePlanting === flushStartWeek && daysBetween(plant.plantedDate, todayISO()) % 7 < 3) {
+                    actions.push({ 
+                        type: 'flush', 
+                        label: `💦 START FLUSH (${actionDate})`, 
+                        css: 'flush' 
+                    });
+                 }
+            }
+            
+            // Filter voltooide acties
+            return actions.filter(action => {
+                const actionKey = `${plant.id}-${action.type}`;
+                return !state.actionsCompletedToday.completed.includes(actionKey);
+            });
+        }
+
+
+        // ===== Rendering (Aangepast: Uploader) =====
         function render(){
+            // Zorg ervoor dat de daily actions worden geinitialiseerd/gereset indien nodig
+            loadState(); 
+            
             const active = state.plants.filter(p=>!p.archived);
             const archived = state.plants.filter(p=>p.archived);
 
@@ -369,6 +512,9 @@
         function renderPlantCard(plant){
             const card = document.createElement('div');
             card.className = 'card';
+            
+            // Haal acties op voor vandaag
+            const actions = getPlantActions(plant);
 
             const h = document.createElement('div'); h.className = 'card-h';
             const left = document.createElement('div'); left.className='grow-1';
@@ -425,22 +571,40 @@
             rowInfo.append(plantedLbl, age, actionButtons);
 
             left.append(row1, rowStrain, rowInfo); 
+            h.appendChild(left); // Voeg links toe aan de header
 
+            // 4. Action Items Bar
+            if (actions.length > 0) {
+                const actionsBar = document.createElement('div');
+                actionsBar.className = 'actions-bar';
+                
+                actions.forEach(action => {
+                    const actionItem = document.createElement('button');
+                    actionItem.className = `action-item ${action.css}`;
+                    actionItem.textContent = action.label;
+                    actionItem.onclick = () => completeAction(plant.id, action.type);
+                    actionsBar.appendChild(actionItem);
+                });
+                h.appendChild(actionsBar); // Voeg de actiebalk toe
+            }
+
+            // 5. Tabs
             const tabs = document.createElement('div'); tabs.className='tabs';
             const tabTimeline = document.createElement('button'); tabTimeline.className='tab active'; tabTimeline.textContent='Tijdlijn';
             const tabSchedule = document.createElement('button'); tabSchedule.className='tab'; tabSchedule.textContent='Herinneringen';
             const tabNotes = document.createElement('button'); tabNotes.className='tab'; tabNotes.textContent='Notities';
             tabs.append(tabTimeline, tabSchedule, tabNotes);
 
-            h.append(left, tabs); card.appendChild(h);
+            h.append(tabs); card.appendChild(h); // Voeg tabs toe aan de header
 
             const bodyTimeline = document.createElement('div'); bodyTimeline.className='card-b';
             const bodySchedule = document.createElement('div'); bodySchedule.className='card-b'; bodySchedule.style.display='none';
             const bodyNotes = document.createElement('div'); bodyNotes.className='card-b'; bodyNotes.style.display='none';
 
-            // Uploader
+            // Uploader (AANGEPAST: 'capture="environment"' toegevoegd)
             const uploader = document.createElement('div'); uploader.className='uploader';
-            const file = Object.assign(document.createElement('input'), { type:'file', accept:'image/*' });
+            // De capture-attribuut zorgt ervoor dat op mobiel direct de camera opent
+            const file = Object.assign(document.createElement('input'), { type:'file', accept:'image/*', capture:'environment' }); 
             const dLbl = document.createElement('label'); dLbl.className='muted'; dLbl.textContent='Datum: ';
             const dIn = Object.assign(document.createElement('input'), {type:'date', value: todayISO()});
             dLbl.appendChild(dIn);
@@ -448,9 +612,9 @@
             note.style.minWidth = '180px'; note.style.flex='1';
             const weekSpan = document.createElement('span'); weekSpan.className='muted'; weekSpan.style.fontSize='12px'; weekSpan.textContent = weekLabel(plant.plantedDate, dIn.value);
             dIn.onchange = ()=> weekSpan.textContent = weekLabel(plant.plantedDate, dIn.value);
-            const upBtn = document.createElement('button'); upBtn.textContent='Upload';
+            const upBtn = document.createElement('button'); upBtn.textContent='Upload/Maak foto'; // Tekst van knop aangepast
             upBtn.onclick = async()=>{
-                if(!file.files[0]) return alert('Kies eerst een foto.');
+                if(!file.files[0]) return alert('Kies eerst een foto of maak een foto.');
                 const dataURL = await fileToDataURL(file.files[0]);
                 const photo = { id:uid(), dataURL, date:dIn.value || todayISO(), note: note.value || '' };
                 const photos = [...plant.photos, photo].sort((a,b)=> new Date(a.date)-new Date(b.date));
@@ -459,7 +623,7 @@
             uploader.append(file, dLbl, note, weekSpan, upBtn);
             bodyTimeline.appendChild(uploader);
 
-            // Galerij
+            // Galerij (Ongewijzigd)
             const gallery = document.createElement('div'); gallery.style.marginTop='12px'; gallery.style.display='grid'; gallery.style.gridTemplateColumns='1fr'; gallery.style.gap='12px';
             if(plant.photos.length===0){
                 const p = document.createElement('div'); p.className='muted'; p.textContent = "Nog geen foto's – voeg je eerste week 0 foto toe hierboven."; gallery.appendChild(p);
@@ -523,10 +687,6 @@
                 </div>
                 <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap;">
                     <button id="btnICS-${plant.id}" class="btn">Export .ics (kalender)</button>
-                    <span class="muted">Browsermeldingen:</span>
-                    <button id="btnPerm-${plant.id}" class="btn">Sta meldingen toe</button>
-                    <button id="btnTest-${plant.id}" class="btn">Test</button>
-                    <span class="muted">(Geplande meldingen vereisen dat de pagina open staat.)</span>
                 </div>`;
 
             // Inputs koppelen
@@ -538,11 +698,9 @@
                 document.getElementById(`flStart-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, flushStartWeek: clamp(e.target.value,0)} });
                 document.getElementById(`harv-${plant.id}`).oninput = (e)=> updatePlant(plant.id, { schedule:{...plant.schedule, targetHarvestWeek: clamp(e.target.value,0)} });
                 document.getElementById(`btnICS-${plant.id}`).onclick = ()=> exportICS(plant);
-                document.getElementById(`btnPerm-${plant.id}`).onclick = requestNotifPerm;
-                document.getElementById(`btnTest-${plant.id}`).onclick = ()=> testNotif(plant);
             });
 
-            // Notities
+            // Notities (Ongewijzigd)
             const ta = document.createElement('textarea'); ta.placeholder='Notities over water, EC/PPM, pH, training, etc.'; ta.value = plant.notes || ''; ta.style.width='100%'; ta.style.minHeight='120px';
             ta.oninput = (e)=> updatePlant(plant.id, { notes:e.target.value });
             bodyNotes.appendChild(ta);
@@ -558,53 +716,7 @@
             function weekLabel(start, at){ return `Week ${weekNumberSince(start, at)}`; }
         }
 
-        // FUNCTIES VOOR MELDINGEN ZIJN NU VERBETERD VOOR CONTROLE
-        function requestNotifPerm(){ 
-            try{ 
-                if(!("Notification" in window)){
-                     alert('Browser ondersteunt meldingen niet.');
-                     return;
-                }
-                // Vraag toestemming aan en geef feedback
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification("Toestemming gelukt!", { body: "Je kunt nu testmeldingen versturen. Probeer de 'Test' knop." });
-                    } else if (permission === 'denied') {
-                        alert('Toestemming voor meldingen geweigerd. Je moet dit handmatig in de browserinstellingen aanpassen.');
-                    }
-                });
-            }catch(e){ 
-                console.error(e);
-                alert('Er is een fout opgetreden bij het aanvragen van toestemming.');
-            } 
-        }
-
-        function testNotif(plant){ 
-            try{ 
-                if(!("Notification" in window)){
-                    alert('Browser ondersteunt meldingen niet.');
-                    return;
-                }
-                
-                // Controleer expliciet de toestemmingsstatus
-                if(Notification.permission === 'granted'){ 
-                    new Notification(`Test – ${plant.name}`, { 
-                        body:'Dit is een testmelding van de Grow Tracker!',
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%2338761D" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 15.5l-3-3 1.41-1.41 1.59 1.59L17.59 8 19 9.41l-8 8.09z"/></svg>'
-                    }); 
-                } else { 
-                    alert(`Melding mislukt: Toestemming is op dit moment "${Notification.permission}". Klik op "Sta meldingen toe" en accepteer de browserprompt die verschijnt.`); 
-                } 
-            }catch(e){ 
-                console.error(e);
-                alert('Fout bij het versturen van de melding.'); 
-            } 
-        }
-
-        function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate()+days); return d; }
-        function setHourMin(date,h,m){ const d = new Date(date); d.setHours(h,m,0,0); return d; }
-        function escapeICS(s){ return String(s).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;'); }
-
+        // ICS Export (Ongewijzigd)
         function exportICS(plant){
             const { plantedDate, schedule } = plant;
             const planted = new Date(plantedDate);
@@ -617,7 +729,7 @@
                 const end = new Date(start.getTime()+durationMin*60000);
                 return [
                     'BEGIN:VEVENT',
-                    `UID:${uid()}@quickone`,
+                    `UID:${uid()}@quickone}`,
                     `DTSTAMP:${dt(new Date())}`,
                     `DTSTART:${dt(start)}`,
                     `DTEND:${dt(end)}`,
